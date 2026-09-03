@@ -21,14 +21,14 @@ jobs:
         run: pip install flake8
 
       - name: Lint
-        run: flake8 src/damage_segmentation/deployment --max-line-length=120
+        run: flake8 app --max-line-length=120
 
       - name: Build Docker image
-        run: docker build -t crack-detector:test src/damage_segmentation/deployment
+        run: docker build -t damage-detector:test .
 
       - name: Run container
         run: |
-          docker run -d -p 8000:8000 -e WANDB_API_KEY=${{ secrets.WANDB_API_KEY }} --name test-container crack-detector:test
+          docker run -d -p 8000:8000 -e WANDB_API_KEY=${{ secrets.WANDB_API_KEY }} --name test-container damage-detector:test
           sleep 15
 
       - name: Create test image
@@ -64,6 +64,6 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: src/damage_segmentation/deployment
+          context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}/crack-detector:latest
+          tags: ghcr.io/${{ github.repository }}/damage-detector:latest
