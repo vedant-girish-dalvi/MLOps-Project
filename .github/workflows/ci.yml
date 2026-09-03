@@ -32,7 +32,7 @@ jobs:
           sleep 15
 
       - name: Create test image
-        run: python -c "from PIL import Image; Image.new('RGB', (640, 640), color=(128,128,128)).save('test.jpg')"
+        run: convert -size 640x640 xc:gray test.jpg
 
       - name: Smoke test /predict endpoint
         run: |
