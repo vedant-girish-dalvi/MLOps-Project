@@ -1,15 +1,13 @@
 import json
 import wandb
 import onnxruntime as ort
-from dotenv import load_dotenv
-load_dotenv()
 
 
 def load_model():
-    run = wandb.init(
-        project="semantic-segmentation",
-        name="log_model_artifact")
-    artifact = run.use_artifact("trained-model:latest")
+    api = wandb.Api()
+    artifact = api.artifact(
+        "vedant_girish-dalvi-hochschule-m-nchen/semantic-segmentation/trained-model:latest"
+    )
     artifact_dir = artifact.download()
 
     with open(f"{artifact_dir}/preprocess_config.json") as f:
@@ -20,5 +18,4 @@ def load_model():
         providers=["CPUExecutionProvider"],
     )
 
-    wandb.finish()
     return session, config
