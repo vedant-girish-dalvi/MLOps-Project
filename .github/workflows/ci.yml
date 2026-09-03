@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lint tools
+        run: pip install flake8
+
+      - name: Lint
+        run: flake8 src/damage_segmentation/deployment --max-line-length=120
+
+      - name: Build Docker image
+        run: docker build -t crack-detector:test src/damage_segmentation/deployment
+
+      - name: Run container
+        run: |
+          docker run -d -p 8000:8000 -e WANDB_API_KEY=${{ secrets.WANDB_API_KEY }} --name test-container crack-detector:test
+          sleep 15
+
+      - name: Create test image
+        run: python -c "from PIL import Image; Image.new('RGB', (640, 640), color=(128,128,128)).save('test.jpg')"
+
+      - name: Smoke test /predict endpoint
+        run: |
+          curl -f -X POST -F "file=@test.jpg" http://localhost:8000/predict --output result.png
+          test -s result.png
+
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker logs test-container
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f test-container
+
+  build-and-push:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: src/damage_segmentation/deployment
+          push: true
+          tags: ghcr.io/${{ github.repository }}/crack-detector:latest
