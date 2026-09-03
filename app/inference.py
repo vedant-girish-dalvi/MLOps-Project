@@ -20,7 +20,7 @@ def sigmoid(x):
 
 
 def overlay_all_damages(class_masks: dict, image: np.ndarray, colormap: np.ndarray,
-                         class_map: dict, alpha=0.5) -> np.ndarray:
+                        class_map: dict, alpha=0.5) -> np.ndarray:
     """
     class_masks: {class_idx: binary_mask (H, W)}
     colormap: array of shape (num_classes, 3), RGB colors
@@ -34,7 +34,8 @@ def overlay_all_damages(class_masks: dict, image: np.ndarray, colormap: np.ndarr
             continue
 
         color = tuple(int(c) for c in colormap[class_idx])
-        contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask.astype(
+            np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours:
             cv2.drawContours(overlay, [cnt], -1, color, -1)
@@ -59,7 +60,8 @@ def overlay_all_damages(class_masks: dict, image: np.ndarray, colormap: np.ndarr
     return blended
 
 
-def predict_all_damages(image: np.ndarray, session, config, threshold: float = DEFAULT_THRESHOLD) -> dict:
+def predict_all_damages(image: np.ndarray, session, config,
+                        threshold: float = DEFAULT_THRESHOLD) -> dict:
     """
     Single-pass ONNX Runtime inference across all damage classes.
     image: RGB numpy array, any size
@@ -80,13 +82,15 @@ def predict_all_damages(image: np.ndarray, session, config, threshold: float = D
 
     input_name = session.get_inputs()[0].name
     output_name = session.get_outputs()[0].name
-    out = session.run([output_name], {input_name: tensor})[0]  # (1, num_classes, h, w)
+    out = session.run([output_name], {input_name: tensor})[
+        0]  # (1, num_classes, h, w)
 
     probs = sigmoid(out[0])  # (num_classes, h, w)
 
     class_masks = {}
     for class_idx in range(num_classes):
-        prob_full = cv2.resize(probs[class_idx], (W, H), interpolation=cv2.INTER_LINEAR)
+        prob_full = cv2.resize(
+            probs[class_idx], (W, H), interpolation=cv2.INTER_LINEAR)
         mask = (prob_full >= threshold).astype(np.uint8)
         if mask.sum() > 0:
             class_masks[class_idx] = mask

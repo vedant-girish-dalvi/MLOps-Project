@@ -28,4 +28,5 @@ async def predict(file: UploadFile = File(...)):
     overlay_bgr = cv2.cvtColor(result["overlay"], cv2.COLOR_RGB2BGR)
     _, encoded = cv2.imencode(".png", overlay_bgr)
 
-    return StreamingResponse(io.BytesIO(encoded.tobytes()), media_type="image/png")
+    return StreamingResponse(io.BytesIO(
+        encoded.tobytes()), media_type="image/png")
